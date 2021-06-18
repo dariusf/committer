@@ -4,6 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"strconv"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/openzipkin/zipkin-go"
 	zipkingrpc "github.com/openzipkin/zipkin-go/middleware/grpc"
@@ -13,15 +19,12 @@ import (
 	"github.com/vadiminshakov/committer/db"
 	"github.com/vadiminshakov/committer/peer"
 	pb "github.com/vadiminshakov/committer/proto"
+	"github.com/vadiminshakov/committer/rv"
 	"github.com/vadiminshakov/committer/trace"
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	status "google.golang.org/grpc/status"
-	"net"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 type Option func(server *Server) error
@@ -47,6 +50,8 @@ type Server struct {
 	cancelCommitOnHeight map[uint64]bool
 	mu                   sync.RWMutex
 	Tracer               *zipkin.Tracer
+	mParts               map[string]bool
+	monitor              *rv.Monitor
 }
 
 func (s *Server) Propose(ctx context.Context, req *pb.ProposeRequest) (*pb.Response, error) {
@@ -164,9 +169,11 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		ctype = pb.CommitType_TWO_PHASE_COMMIT
 	}
 
+	g := rv.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
+
 	// propose
 	log.Infof("propose key %s", req.Key)
-	for _, follower := range s.Followers {
+	for pid, follower := range s.Followers {
 		if s.Config.CommitType == THREE_PHASE {
 			ctx, _ = context.WithTimeout(ctx, time.Duration(s.Config.Timeout)*time.Millisecond)
 		}
@@ -185,6 +192,9 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			if s.Tracer != nil && span != nil {
 				span.Finish()
 			}
+			if err := s.monitor.Step(g, rv.CSendPrepare8, strconv.Itoa(pid)); err != nil {
+				log.Printf("%v\n", err)
+			}
 			if response != nil && response.Index > s.Height {
 				log.Warnf("сoordinator has stale height [%d], update to [%d] and try to send again", s.Height, response.Index)
 				s.Height = response.Index
@@ -192,11 +202,18 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		}
 		if err != nil {
 			log.Errorf(err.Error())
+			if err := s.monitor.Step(g, rv.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
+				log.Printf("%v\n", err)
+			}
+			g.HasAborted = true
 			return &pb.Response{Type: pb.Type_NACK}, nil
 		}
 		s.NodeCache.Set(s.Height, req.Key, req.Value)
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
+		}
+		if err := s.monitor.Step(g, rv.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
+			log.Printf("%v\n", err)
 		}
 	}
 
@@ -228,18 +245,32 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		return nil, status.Error(codes.Internal, "can't to find msg in the coordinator's cache")
 	}
 	if err = s.DB.Put(key, value); err != nil {
+		for pid := range s.Followers {
+			g.Aborted[strconv.Itoa(pid)] = true
+		}
+		for pid := range s.Followers {
+			if err := s.monitor.Step(g, rv.CSendAbort13, strconv.Itoa(pid)); err != nil {
+				log.Printf("%v\n", err)
+			}
+			if err := s.monitor.Step(g, rv.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
+				log.Printf("%v\n", err)
+			}
+		}
 		return &pb.Response{Type: pb.Type_NACK}, status.Error(codes.Internal, "failed to save msg on coordinator")
 	}
 
 	// commit
 	log.Infof("commit %s", req.Key)
-	for _, follower := range s.Followers {
+	for pid, follower := range s.Followers {
 		if s.Tracer != nil {
 			span, ctx = s.Tracer.StartSpanFromContext(ctx, "Commit")
 		}
 		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
 		if s.Tracer != nil && span != nil {
 			span.Finish()
+		}
+		if err := s.monitor.Step(g, rv.CSendCommit11, strconv.Itoa(pid)); err != nil {
+			log.Printf("%v\n", err)
 		}
 		if err != nil {
 			log.Errorf(err.Error())
@@ -248,10 +279,16 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
+		if err := s.monitor.Step(g, rv.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
+			log.Printf("%v\n", err)
+		}
+		g.Committed[strconv.Itoa(pid)] = true
 	}
 	log.Infof("committed key %s", req.Key)
 	// increase height for next round
 	atomic.AddUint64(&s.Height, 1)
+
+	s.monitor.PrintLog()
 
 	return &pb.Response{Type: pb.Type_ACK}, nil
 }
@@ -274,7 +311,11 @@ func NewCommitServer(conf *config.Config, opts ...Option) (*Server, error) {
 		TimestampFormat: time.RFC822,
 	})
 
-	server := &Server{Addr: conf.Nodeaddr, DBPath: conf.DBPath}
+	mParts := map[string]bool{}
+	server := &Server{Addr: conf.Nodeaddr, DBPath: conf.DBPath,
+		mParts:  mParts,
+		monitor: rv.NewMonitor(map[string]map[string]bool{"P": mParts}),
+	}
 	var err error
 	for _, option := range opts {
 		err = option(server)
@@ -291,11 +332,12 @@ func NewCommitServer(conf *config.Config, opts ...Option) (*Server, error) {
 		}
 	}
 
-	for _, node := range conf.Followers {
+	for pid, node := range conf.Followers {
 		cli, err := peer.New(node, server.Tracer)
 		if err != nil {
 			return nil, err
 		}
+		mParts[strconv.Itoa(pid)] = true
 		server.Followers = append(server.Followers, cli)
 	}
 
