@@ -1,0 +1,18 @@
+$ go tool pprof --trim=false profile.prof
+Type: cpu
+Time: Jun 18, 2021 at 3:26pm (+08)
+Duration: 7.77s, Total samples = 712.31ms ( 9.17%)
+Entering interactive mode (type "help" for commands, "o" for options)
+(pprof) show=rv\.
+(pprof) top -cum
+Active filters:
+   show=rv\.
+Showing nodes accounting for 0.34ms, 0.048% of 712.31ms total
+      flat  flat%   sum%        cum   cum%
+    0.20ms 0.028% 0.028%     0.20ms 0.028%  github.com/vadiminshakov/committer/rv.(*Monitor).PrintLog
+    0.03ms 0.0042% 0.032%     0.14ms  0.02%  github.com/vadiminshakov/committer/rv.(*Monitor).Step
+         0     0% 0.032%     0.06ms 0.0084%  github.com/vadiminshakov/committer/rv.(*LTLMonitor1).StepLTL1
+    0.06ms 0.0084% 0.041%     0.06ms 0.0084%  github.com/vadiminshakov/committer/rv.(*LTLMonitor1).t0 (inline)
+    0.03ms 0.0042% 0.045%     0.03ms 0.0042%  github.com/vadiminshakov/committer/rv.(*Monitor).precondition
+    0.02ms 0.0028% 0.048%     0.02ms 0.0028%  github.com/vadiminshakov/committer/rv.(*Monitor).applyPostcondition
+(pprof) q

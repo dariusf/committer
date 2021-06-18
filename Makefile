@@ -8,7 +8,7 @@ prepare:
 	@mkdir -p /tmp/badger/follower2
 
 run-example-coordinator:
-	@./committer -role=coordinator -nodeaddr=localhost:3000 -followers=localhost:3001,localhost:3002 -committype=two-phase -timeout=1000 -dbpath=/tmp/badger/coordinator -whitelist=127.0.0.1
+	@COORDINATOR=1 ./committer -role=coordinator -nodeaddr=localhost:3000 -followers=localhost:3001,localhost:3002 -committype=two-phase -timeout=1000 -dbpath=/tmp/badger/coordinator -whitelist=127.0.0.1
 
 run-example-follower1:
 	@./committer -role=follower -nodeaddr=localhost:3001 -committype=two-phase -timeout=1000 -dbpath=/tmp/badger/follower1 -whitelist=127.0.0.1
