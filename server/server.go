@@ -19,7 +19,8 @@ import (
 	"github.com/vadiminshakov/committer/db"
 	"github.com/vadiminshakov/committer/peer"
 	pb "github.com/vadiminshakov/committer/proto"
-	"github.com/vadiminshakov/committer/rv"
+	"github.com/vadiminshakov/committer/rvc"
+	"github.com/vadiminshakov/committer/rvp"
 	"github.com/vadiminshakov/committer/trace"
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -51,7 +52,8 @@ type Server struct {
 	mu                   sync.RWMutex
 	Tracer               *zipkin.Tracer
 	mParts               map[string]bool
-	monitor              *rv.Monitor
+	MonitorC             *rvc.Monitor
+	MonitorP             *rvp.Monitor
 }
 
 func (s *Server) Propose(ctx context.Context, req *pb.ProposeRequest) (*pb.Response, error) {
@@ -169,7 +171,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		ctype = pb.CommitType_TWO_PHASE_COMMIT
 	}
 
-	g := rv.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
+	g := rvc.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
 
 	// propose
 	log.Infof("propose key %s", req.Key)
@@ -192,7 +194,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			if s.Tracer != nil && span != nil {
 				span.Finish()
 			}
-			if err := s.monitor.Step(g, rv.CSendPrepare8, strconv.Itoa(pid)); err != nil {
+			if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
 			if response != nil && response.Index > s.Height {
@@ -202,7 +204,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		}
 		if err != nil {
 			log.Errorf(err.Error())
-			if err := s.monitor.Step(g, rv.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
+			if err := s.MonitorC.Step(g, rvc.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
 			g.HasAborted = true
@@ -212,7 +214,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		if err := s.monitor.Step(g, rv.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
+		if err := s.MonitorC.Step(g, rvc.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
 	}
@@ -249,10 +251,10 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			g.Aborted[strconv.Itoa(pid)] = true
 		}
 		for pid := range s.Followers {
-			if err := s.monitor.Step(g, rv.CSendAbort13, strconv.Itoa(pid)); err != nil {
+			if err := s.MonitorC.Step(g, rvc.CSendAbort13, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
-			if err := s.monitor.Step(g, rv.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
+			if err := s.MonitorC.Step(g, rvc.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
 		}
@@ -269,7 +271,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if s.Tracer != nil && span != nil {
 			span.Finish()
 		}
-		if err := s.monitor.Step(g, rv.CSendCommit11, strconv.Itoa(pid)); err != nil {
+		if err := s.MonitorC.Step(g, rvc.CSendCommit11, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
 		if err != nil {
@@ -279,7 +281,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		if err := s.monitor.Step(g, rv.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
+		if err := s.MonitorC.Step(g, rvc.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
 		g.Committed[strconv.Itoa(pid)] = true
@@ -288,7 +290,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 	// increase height for next round
 	atomic.AddUint64(&s.Height, 1)
 
-	s.monitor.PrintLog()
+	s.MonitorC.Reset()
 
 	return &pb.Response{Type: pb.Type_ACK}, nil
 }
@@ -313,8 +315,7 @@ func NewCommitServer(conf *config.Config, opts ...Option) (*Server, error) {
 
 	mParts := map[string]bool{}
 	server := &Server{Addr: conf.Nodeaddr, DBPath: conf.DBPath,
-		mParts:  mParts,
-		monitor: rv.NewMonitor(map[string]map[string]bool{"P": mParts}),
+		mParts: mParts,
 	}
 	var err error
 	for _, option := range opts {
@@ -344,6 +345,9 @@ func NewCommitServer(conf *config.Config, opts ...Option) (*Server, error) {
 	server.Config = conf
 	if conf.Role == "coordinator" {
 		server.Config.Coordinator = server.Addr
+		server.MonitorC = rvc.NewMonitor(map[string]map[string]bool{"P": mParts})
+	} else {
+		server.MonitorP = rvp.NewMonitor(map[string]map[string]bool{"C": {"c": true}})
 	}
 
 	server.DB, err = db.New(conf.DBPath)
