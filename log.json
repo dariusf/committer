@@ -1,0 +1,162 @@
+[
+  {
+    "no": 1,
+    "name": "CSendPrepare8",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 2,
+    "name": "CReceivePrepared9",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 3,
+    "name": "CSendPrepare8",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 4,
+    "name": "CReceivePrepared9",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 5,
+    "name": "CSendCommit11",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 6,
+    "name": "CReceiveCommitAck12",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 7,
+    "name": "CSendCommit11",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  },
+  {
+    "no": 8,
+    "name": "CReceiveCommitAck12",
+    "state": {
+      "CommitType": "two-phase",
+      "Coordinator": "localhost:3000",
+      "DBPath": "/tmp/badger/coordinator",
+      "Followers": [
+        "localhost:3001",
+        "localhost:3002"
+      ],
+      "Nodeaddr": "localhost:3000",
+      "Role": "coordinator",
+      "Timeout": 1000,
+      "Whitelist": [
+        "127.0.0.1"
+      ],
+      "WithTrace": false
+    }
+  }
+]

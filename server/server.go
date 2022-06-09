@@ -2,9 +2,11 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -54,6 +56,41 @@ type Server struct {
 	mParts               map[string]bool
 	MonitorC             *rvc.Monitor
 	MonitorP             *rvp.Monitor
+}
+
+var f *os.File = nil
+
+func (s *Server) serverToJson(action string) {
+	str, err := json.Marshal(map[string]interface{}{
+		"Role":        s.Config.Role,
+		"Nodeaddr":    s.Config.Nodeaddr,
+		"Coordinator": s.Config.Coordinator,
+		"Followers":   s.Config.Followers,
+		"Whitelist":   s.Config.Whitelist,
+		"CommitType":  s.Config.CommitType,
+		"Timeout":     s.Config.Timeout,
+		"DBPath":      s.Config.DBPath,
+		"WithTrace":   s.Config.WithTrace,
+		"_name":       action,
+	})
+	if err != nil {
+		panic(err)
+		// log.Println(err)
+		// return
+	}
+	if f == nil {
+		f1, err := os.OpenFile("log.ndjson", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		f = f1
+		if err != nil {
+			panic(err)
+			// log.Println(err)
+			// return
+		}
+	}
+	// defer f.Close()
+	if _, err = f.WriteString(string(str) + "\n"); err != nil {
+		panic(err)
+	}
 }
 
 func (s *Server) Propose(ctx context.Context, req *pb.ProposeRequest) (*pb.Response, error) {
@@ -194,6 +231,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			if s.Tracer != nil && span != nil {
 				span.Finish()
 			}
+			s.serverToJson("CSendPrepare8")
 			if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
@@ -204,6 +242,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		}
 		if err != nil {
 			log.Errorf(err.Error())
+			s.serverToJson("CReceiveAbort10")
 			if err := s.MonitorC.Step(g, rvc.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
@@ -214,6 +253,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
+		s.serverToJson("CReceivePrepared9")
 		if err := s.MonitorC.Step(g, rvc.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
@@ -251,9 +291,11 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			g.Aborted[strconv.Itoa(pid)] = true
 		}
 		for pid := range s.Followers {
+			s.serverToJson("CSendAbort13")
 			if err := s.MonitorC.Step(g, rvc.CSendAbort13, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
+			s.serverToJson("CReceiveAbortAck14")
 			if err := s.MonitorC.Step(g, rvc.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
@@ -271,6 +313,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if s.Tracer != nil && span != nil {
 			span.Finish()
 		}
+		s.serverToJson("CSendCommit11")
 		if err := s.MonitorC.Step(g, rvc.CSendCommit11, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
@@ -281,6 +324,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
+		s.serverToJson("CReceiveCommitAck12")
 		if err := s.MonitorC.Step(g, rvc.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
