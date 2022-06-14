@@ -60,19 +60,8 @@ type Server struct {
 
 var f *os.File = nil
 
-func (s *Server) serverToJson(action string) {
-	str, err := json.Marshal(map[string]interface{}{
-		"Role":        s.Config.Role,
-		"Nodeaddr":    s.Config.Nodeaddr,
-		"Coordinator": s.Config.Coordinator,
-		"Followers":   s.Config.Followers,
-		"Whitelist":   s.Config.Whitelist,
-		"CommitType":  s.Config.CommitType,
-		"Timeout":     s.Config.Timeout,
-		"DBPath":      s.Config.DBPath,
-		"WithTrace":   s.Config.WithTrace,
-		"_name":       action,
-	})
+func writeToJson(data map[string]interface{}) {
+	str, err := json.Marshal(data)
 	if err != nil {
 		panic(err)
 		// log.Println(err)
@@ -91,6 +80,22 @@ func (s *Server) serverToJson(action string) {
 	if _, err = f.WriteString(string(str) + "\n"); err != nil {
 		panic(err)
 	}
+}
+
+func (s *Server) serverToJson(action string) {
+	writeToJson(map[string]interface{}{
+		"Role":        s.Config.Role,
+		"Nodeaddr":    s.Config.Nodeaddr,
+		"Coordinator": s.Config.Coordinator,
+		"Followers":   s.Config.Followers,
+		"Whitelist":   s.Config.Whitelist,
+		"CommitType":  s.Config.CommitType,
+		"Timeout":     s.Config.Timeout,
+		"DBPath":      s.Config.DBPath,
+		"WithTrace":   s.Config.WithTrace,
+		"_name":       action,
+		"_type":       "internal",
+	})
 }
 
 func (s *Server) Propose(ctx context.Context, req *pb.ProposeRequest) (*pb.Response, error) {
@@ -224,10 +229,24 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			err      error
 		)
 		for response == nil || response != nil && response.Type == pb.Type_NACK {
+			writeToJson(map[string]interface{}{
+				"_type":      "send",
+				"_name":      "Propose",
+				"Key":        req.Key,
+				"Value":      req.Value,
+				"CommitType": ctype,
+				"Index":      s.Height,
+			})
 			response, err = follower.Propose(ctx, &pb.ProposeRequest{Key: req.Key,
 				Value:      req.Value,
 				CommitType: ctype,
 				Index:      s.Height})
+			writeToJson(map[string]interface{}{
+				"_type": "receive",
+				"_name": "Propose",
+				"Type":  response.Type,
+				"Index": response.Index,
+			})
 			if s.Tracer != nil && span != nil {
 				span.Finish()
 			}
@@ -309,7 +328,18 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if s.Tracer != nil {
 			span, ctx = s.Tracer.StartSpanFromContext(ctx, "Commit")
 		}
+		writeToJson(map[string]interface{}{
+			"_type": "send",
+			"_name": "Commit",
+			"Index": s.Height,
+		})
 		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
+		writeToJson(map[string]interface{}{
+			"_type": "receive",
+			"_name": "Commit",
+			"Type":  response.Type,
+			"Index": response.Index,
+		})
 		if s.Tracer != nil && span != nil {
 			span.Finish()
 		}
