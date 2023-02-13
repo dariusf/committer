@@ -82,20 +82,23 @@ func writeToJson(data map[string]interface{}) {
 	}
 }
 
-func (s *Server) serverToJson(action string) {
-	writeToJson(map[string]interface{}{
-		"Role":        s.Config.Role,
-		"Nodeaddr":    s.Config.Nodeaddr,
-		"Coordinator": s.Config.Coordinator,
-		"Followers":   s.Config.Followers,
-		"Whitelist":   s.Config.Whitelist,
-		"CommitType":  s.Config.CommitType,
-		"Timeout":     s.Config.Timeout,
-		"DBPath":      s.Config.DBPath,
-		"WithTrace":   s.Config.WithTrace,
-		"_name":       action,
-		"_type":       "internal",
-	})
+var msgs []map[string]interface{}
+
+func (s *Server) serverToJson(action string, msg map[string]interface{}, aux map[string]interface{}) {
+	if msg != nil {
+		msgs = append(msgs, msg)
+	}
+	m := map[string]interface{}{
+		// "Height": s.Height,
+		"_name": action,
+		// "_type":  "internal",
+		// "_message": msg,
+		"_message": msgs,
+	}
+	for k, v := range aux {
+		m[k] = v
+	}
+	writeToJson(m)
 }
 
 func (s *Server) Propose(ctx context.Context, req *pb.ProposeRequest) (*pb.Response, error) {
@@ -215,6 +218,16 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 
 	g := rvc.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
 
+	aux := map[string]interface{}{}
+	pstatus := map[string]interface{}{}
+	for pid, _ := range s.Followers {
+		id := strconv.Itoa(pid)
+		pstatus[id] = "working"
+	}
+	aux["status"] = pstatus
+
+	s.serverToJson("Initial", nil, aux)
+
 	// propose
 	log.Infof("propose key %s", req.Key)
 	for pid, follower := range s.Followers {
@@ -229,39 +242,43 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			err      error
 		)
 		for response == nil || response != nil && response.Type == pb.Type_NACK {
-			writeToJson(map[string]interface{}{
-				"_type":      "send",
-				"_name":      "Propose",
-				"Key":        req.Key,
-				"Value":      req.Value,
-				"CommitType": ctype,
-				"Index":      s.Height,
-			})
+			prepareReq := map[string]interface{}{
+				"_type": "send",
+				"_name": "Propose",
+				// "Key":        req.Key,
+				// "Value":      req.Value,
+				// "CommitType": ctype,
+				// "Index":      s.Height,
+				"To": pid,
+			}
+			s.serverToJson("CSendPrepare8", prepareReq, aux)
+			if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
+				log.Printf("%v\n", err)
+			}
 			response, err = follower.Propose(ctx, &pb.ProposeRequest{Key: req.Key,
 				Value:      req.Value,
 				CommitType: ctype,
 				Index:      s.Height})
-			writeToJson(map[string]interface{}{
-				"_type": "receive",
-				"_name": "Propose",
-				"Type":  response.Type,
-				"Index": response.Index,
-			})
 			if s.Tracer != nil && span != nil {
 				span.Finish()
-			}
-			s.serverToJson("CSendPrepare8")
-			if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
-				log.Printf("%v\n", err)
 			}
 			if response != nil && response.Index > s.Height {
 				log.Warnf("сoordinator has stale height [%d], update to [%d] and try to send again", s.Height, response.Index)
 				s.Height = response.Index
 			}
 		}
+		pstatus[strconv.Itoa(pid)] = "prepared"
+		prepareResp := map[string]interface{}{
+			"_type": "receive",
+			"_name": "Propose",
+			// "Type":  response.Type,
+			// "Index": response.Index,
+			"From": pid,
+		}
 		if err != nil {
 			log.Errorf(err.Error())
-			s.serverToJson("CReceiveAbort10")
+			pstatus[strconv.Itoa(pid)] = "aborted"
+			s.serverToJson("CReceiveAbort10", prepareResp, aux)
 			if err := s.MonitorC.Step(g, rvc.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
@@ -272,7 +289,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		s.serverToJson("CReceivePrepared9")
+		s.serverToJson("CReceivePrepared9", prepareResp, aux)
 		if err := s.MonitorC.Step(g, rvc.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}
@@ -310,11 +327,29 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			g.Aborted[strconv.Itoa(pid)] = true
 		}
 		for pid := range s.Followers {
-			s.serverToJson("CSendAbort13")
+
+			abortReq := map[string]interface{}{
+				"_type": "send",
+				"_name": "Abort",
+				// "Index": s.Height,
+				"To": pid,
+			}
+			pstatus[strconv.Itoa(pid)] = "aborted"
+			s.serverToJson("CSendAbort13", abortReq, aux)
+
 			if err := s.MonitorC.Step(g, rvc.CSendAbort13, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
-			s.serverToJson("CReceiveAbortAck14")
+
+			abortResp := map[string]interface{}{
+				"_type": "receive",
+				"_name": "Abort",
+				// "Type":  response.Type,
+				// "Index": response.Index,
+				"From": pid,
+			}
+			s.serverToJson("CReceiveAbortAck14", abortResp, aux)
+
 			if err := s.MonitorC.Step(g, rvc.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
 				log.Printf("%v\n", err)
 			}
@@ -328,24 +363,19 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if s.Tracer != nil {
 			span, ctx = s.Tracer.StartSpanFromContext(ctx, "Commit")
 		}
-		writeToJson(map[string]interface{}{
+		commitReq := map[string]interface{}{
 			"_type": "send",
 			"_name": "Commit",
-			"Index": s.Height,
-		})
-		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
-		writeToJson(map[string]interface{}{
-			"_type": "receive",
-			"_name": "Commit",
-			"Type":  response.Type,
-			"Index": response.Index,
-		})
-		if s.Tracer != nil && span != nil {
-			span.Finish()
+			// "Index": s.Height,
+			"To": pid,
 		}
-		s.serverToJson("CSendCommit11")
+		s.serverToJson("CSendCommit11", commitReq, aux)
 		if err := s.MonitorC.Step(g, rvc.CSendCommit11, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
+		}
+		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
+		if s.Tracer != nil && span != nil {
+			span.Finish()
 		}
 		if err != nil {
 			log.Errorf(err.Error())
@@ -354,7 +384,15 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		s.serverToJson("CReceiveCommitAck12")
+		commitResp := map[string]interface{}{
+			"_type": "receive",
+			"_name": "Commit",
+			// "Type":  response.Type,
+			// "Index": response.Index,
+			"From": pid,
+		}
+		pstatus[strconv.Itoa(pid)] = "committed"
+		s.serverToJson("CReceiveCommitAck12", commitResp, aux)
 		if err := s.MonitorC.Step(g, rvc.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
 			log.Printf("%v\n", err)
 		}

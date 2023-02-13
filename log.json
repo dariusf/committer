@@ -1,404 +1,289 @@
 [
   {
     "no": 1,
-    "name": "CSendPrepare8",
+    "name": "Initial",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "_message": null,
+      "status": {
+        "0": "working",
+        "1": "working"
+      }
     }
   },
   {
     "no": 2,
-    "name": "CReceivePrepared9",
+    "name": "CSendPrepare8",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "working",
+        "1": "working"
+      }
     }
   },
   {
     "no": 3,
-    "name": "CSendPrepare8",
+    "name": "CReceivePrepared9",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "prepared",
+        "1": "working"
+      }
     }
   },
   {
     "no": 4,
-    "name": "CReceivePrepared9",
+    "name": "CSendPrepare8",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "prepared",
+        "1": "working"
+      }
     }
   },
   {
     "no": 5,
-    "name": "CSendCommit11",
+    "name": "CReceivePrepared9",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Propose",
+          "_type": "receive"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "prepared",
+        "1": "prepared"
+      }
     }
   },
   {
     "no": 6,
-    "name": "CReceiveCommitAck12",
+    "name": "CSendCommit11",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 0,
+          "_name": "Commit",
+          "_type": "send"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "prepared",
+        "1": "prepared"
+      }
     }
   },
   {
     "no": 7,
-    "name": "CSendCommit11",
+    "name": "CReceiveCommitAck12",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 0,
+          "_name": "Commit",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Commit",
+          "_type": "receive"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "committed",
+        "1": "prepared"
+      }
     }
   },
   {
     "no": 8,
-    "name": "CReceiveCommitAck12",
+    "name": "CSendCommit11",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 0,
+          "_name": "Commit",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Commit",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Commit",
+          "_type": "send"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false
+      "status": {
+        "0": "committed",
+        "1": "prepared"
+      }
     }
   },
   {
     "no": 9,
-    "name": "Propose",
-    "state": {
-      "CommitType": 0,
-      "Index": 0,
-      "Key": "key0",
-      "Value": "cmVxMA==",
-      "_type": "send"
-    }
-  },
-  {
-    "no": 10,
-    "name": "Propose",
-    "state": {
-      "Index": 0,
-      "Type": 0,
-      "_type": "receive"
-    }
-  },
-  {
-    "no": 11,
-    "name": "CSendPrepare8",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 12,
-    "name": "CReceivePrepared9",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 13,
-    "name": "Propose",
-    "state": {
-      "CommitType": 0,
-      "Index": 0,
-      "Key": "key0",
-      "Value": "cmVxMA==",
-      "_type": "send"
-    }
-  },
-  {
-    "no": 14,
-    "name": "Propose",
-    "state": {
-      "Index": 0,
-      "Type": 0,
-      "_type": "receive"
-    }
-  },
-  {
-    "no": 15,
-    "name": "CSendPrepare8",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 16,
-    "name": "CReceivePrepared9",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 17,
-    "name": "Commit",
-    "state": {
-      "Index": 0,
-      "_type": "send"
-    }
-  },
-  {
-    "no": 18,
-    "name": "Commit",
-    "state": {
-      "Index": 0,
-      "Type": 0,
-      "_type": "receive"
-    }
-  },
-  {
-    "no": 19,
-    "name": "CSendCommit11",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 20,
     "name": "CReceiveCommitAck12",
     "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
+      "_message": [
+        {
+          "To": 0,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Propose",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Propose",
+          "_type": "receive"
+        },
+        {
+          "To": 0,
+          "_name": "Commit",
+          "_type": "send"
+        },
+        {
+          "From": 0,
+          "_name": "Commit",
+          "_type": "receive"
+        },
+        {
+          "To": 1,
+          "_name": "Commit",
+          "_type": "send"
+        },
+        {
+          "From": 1,
+          "_name": "Commit",
+          "_type": "receive"
+        }
       ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 21,
-    "name": "Commit",
-    "state": {
-      "Index": 0,
-      "_type": "send"
-    }
-  },
-  {
-    "no": 22,
-    "name": "Commit",
-    "state": {
-      "Index": 0,
-      "Type": 0,
-      "_type": "receive"
-    }
-  },
-  {
-    "no": 23,
-    "name": "CSendCommit11",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
-    }
-  },
-  {
-    "no": 24,
-    "name": "CReceiveCommitAck12",
-    "state": {
-      "CommitType": "two-phase",
-      "Coordinator": "localhost:3000",
-      "DBPath": "/tmp/badger/coordinator",
-      "Followers": [
-        "localhost:3001",
-        "localhost:3002"
-      ],
-      "Nodeaddr": "localhost:3000",
-      "Role": "coordinator",
-      "Timeout": 1000,
-      "Whitelist": [
-        "127.0.0.1"
-      ],
-      "WithTrace": false,
-      "_type": "internal"
+      "status": {
+        "0": "committed",
+        "1": "committed"
+      }
     }
   }
 ]
