@@ -11,7 +11,7 @@ cl='env REQUESTS=1 make run-example-client'
 clean() {
   ps aux | grep committer | grep -v grep | awk '{print $2}' | xargs kill
   tmux kill-session -t test_2pc || true
-  rm log*json
+  rm log*json || true
 }
 
 clean

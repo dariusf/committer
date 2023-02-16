@@ -26,11 +26,11 @@ func main() {
 
 	s.Run(server.WhiteListChecker)
 	<-ch
-	if s.MonitorC != nil {
-		s.MonitorC.PrintLog()
-	}
-	if s.MonitorP != nil {
-		s.MonitorP.PrintLog()
-	}
+	// if s.MonitorC != nil {
+	// 	s.MonitorC.PrintLog()
+	// }
+	// if s.MonitorP != nil {
+	// 	s.MonitorP.PrintLog()
+	// }
 	s.Stop()
 }

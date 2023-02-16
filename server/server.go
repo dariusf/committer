@@ -19,10 +19,10 @@ import (
 	"github.com/vadiminshakov/committer/cache"
 	"github.com/vadiminshakov/committer/config"
 	"github.com/vadiminshakov/committer/db"
+
+	// mon "github.com/vadiminshakov/committer/monitoring"
 	"github.com/vadiminshakov/committer/peer"
 	pb "github.com/vadiminshakov/committer/proto"
-	"github.com/vadiminshakov/committer/rvc"
-	"github.com/vadiminshakov/committer/rvp"
 	"github.com/vadiminshakov/committer/trace"
 	"google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -54,8 +54,7 @@ type Server struct {
 	mu                   sync.RWMutex
 	Tracer               *zipkin.Tracer
 	mParts               map[string]bool
-	MonitorC             *rvc.Monitor
-	MonitorP             *rvp.Monitor
+	monitor              *Monitor
 }
 
 var f *os.File = nil
@@ -216,17 +215,27 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		ctype = pb.CommitType_TWO_PHASE_COMMIT
 	}
 
-	g := rvc.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
+	// g := rvc.Global{HasAborted: false, Committed: map[string]bool{}, Aborted: map[string]bool{}}
 
-	aux := map[string]interface{}{}
-	pstatus := map[string]interface{}{}
-	for pid, _ := range s.Followers {
-		id := strconv.Itoa(pid)
-		pstatus[id] = "working"
-	}
-	aux["status"] = pstatus
+	// auxiliary state, as the set of committed participants is only implicitly maintained via control flow
+	// g := rvc.Global{
+	// 	HasAborted: false,
+	// 	Committed: map[string]bool{},
+	// 	Aborted: map[string]bool{},
+	// }
 
-	s.serverToJson("Initial", nil, aux)
+	gs := s.Starting()
+	s.monitor.CaptureState(gs, Initial)
+	gs.who = str("coordinator")
+
+	// aux := map[string]interface{}{}
+	// pstatus := map[string]interface{}{}
+	// for pid, _ := range s.Followers {
+	// 	id := strconv.Itoa(pid)
+	// 	pstatus[id] = "working"
+	// }
+	// aux["status"] = pstatus
+	// s.serverToJson("Initial", nil, aux)
 
 	// propose
 	log.Infof("propose key %s", req.Key)
@@ -242,23 +251,49 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			err      error
 		)
 		for response == nil || response != nil && response.Type == pb.Type_NACK {
-			prepareReq := map[string]interface{}{
-				"_type": "send",
-				"_name": "Propose",
-				// "Key":        req.Key,
-				// "Value":      req.Value,
-				// "CommitType": ctype,
-				// "Index":      s.Height,
-				"To": pid,
-			}
-			s.serverToJson("CSendPrepare8", prepareReq, aux)
-			if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
-				log.Printf("%v\n", err)
-			}
-			response, err = follower.Propose(ctx, &pb.ProposeRequest{Key: req.Key,
+			// prepareReq := map[string]interface{}{
+			// 	"_type": "send",
+			// 	"_name": "Propose",
+			// 	// "Key":        req.Key,
+			// 	// "Value":      req.Value,
+			// 	// "CommitType": ctype,
+			// 	// "Index":      s.Height,
+			// 	"To": pid,
+			// }
+			// s.serverToJson("CSendPrepare8", prepareReq, aux)
+
+			// s.Monitor.CaptureState(, monitoring.CSendPrepare)
+			// if err := s.MonitorC.Step(g, rvc.CSendPrepare8, strconv.Itoa(pid)); err != nil {
+			// 	log.Printf("%v\n", err)
+			// }
+
+			proposeReq := pb.ProposeRequest{Key: req.Key,
 				Value:      req.Value,
 				CommitType: ctype,
-				Index:      s.Height})
+				Index:      s.Height}
+
+			// gs.outbox = Except(gs.outbox.(Record),
+			// 	str("coordinator"), Append(RecordIndex(gs.outbox.(Record), str("coordinator")).(Seq), RefineProposeMsg(pid, &proposeReq)))
+
+			{
+				msg := RefineProposeMsg(pid, &proposeReq)
+				gs.outbox = Except(gs.outbox.(Record),
+					str("coordinator"), seq(msg))
+				gs.actions = Append(gs.actions.(Seq),
+					seq(str("CSendPrepare"), RefineParty(pid)))
+				gs.who = str("coordinator")
+				s.monitor.CaptureState(gs, CSendPrepare, RefineParty(pid))
+
+				gs.outbox = Except(gs.outbox.(Record),
+					str("coordinator"), seq())
+				gs.actions = Append(gs.actions.(Seq),
+					seq(str("NetworkTakeMessage"), msg))
+				gs.who = str("Network")
+				s.monitor.CaptureState(gs, NetworkTakeMessage, msg)
+			}
+
+			response, err = follower.Propose(ctx, &proposeReq)
+
 			if s.Tracer != nil && span != nil {
 				span.Finish()
 			}
@@ -267,31 +302,58 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 				s.Height = response.Index
 			}
 		}
-		pstatus[strconv.Itoa(pid)] = "prepared"
-		prepareResp := map[string]interface{}{
-			"_type": "receive",
-			"_name": "Propose",
-			// "Type":  response.Type,
-			// "Index": response.Index,
-			"From": pid,
-		}
+		// pstatus[strconv.Itoa(pid)] = "prepared"
+		// prepareResp := map[string]interface{}{
+		// 	"_type": "receive",
+		// 	"_name": "Propose",
+		// 	// "Type":  response.Type,
+		// 	// "Index": response.Index,
+		// 	"From": pid,
+		// }
 		if err != nil {
 			log.Errorf(err.Error())
-			pstatus[strconv.Itoa(pid)] = "aborted"
-			s.serverToJson("CReceiveAbort10", prepareResp, aux)
-			if err := s.MonitorC.Step(g, rvc.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
-				log.Printf("%v\n", err)
+			// pstatus[strconv.Itoa(pid)] = "aborted"
+			// s.serverToJson("CReceiveAbort10", prepareResp, aux)
+			// if err := s.MonitorC.Step(g, rvc.CReceiveAbort10, strconv.Itoa(pid)); err != nil {
+			// 	log.Printf("%v\n", err)
+			// }
+			// g.HasAborted = true
+			{
+				msg := RefineAbortedMsg(pid)
+				gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
+				gs.who = str("Network")
+				gs.actions = Append(gs.actions.(Seq), seq(str("NetworkDeliverMessage"), msg))
+				s.monitor.CaptureState(gs, NetworkDeliverMessage, msg)
+
+				gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq())
+				gs.actions = Append(gs.actions.(Seq), seq(str("CReceiveAbort"), RefineParty(pid)))
+				gs.tmPrepared = Append(gs.tmPrepared.(Seq), RefineParty(pid))
+				gs.who = str("coordinator")
+				s.monitor.CaptureState(gs, CReceiveAbort, RefineParty(pid))
 			}
-			g.HasAborted = true
 			return &pb.Response{Type: pb.Type_NACK}, nil
 		}
 		s.NodeCache.Set(s.Height, req.Key, req.Value)
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		s.serverToJson("CReceivePrepared9", prepareResp, aux)
-		if err := s.MonitorC.Step(g, rvc.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
-			log.Printf("%v\n", err)
+		// s.serverToJson("CReceivePrepared9", prepareResp, aux)
+		// if err := s.MonitorC.Step(g, rvc.CReceivePrepared9, strconv.Itoa(pid)); err != nil {
+		// 	log.Printf("%v\n", err)
+		// }
+
+		{
+			msg := RefineProposeReply(pid)
+			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
+			gs.who = str("Network")
+			gs.actions = Append(gs.actions.(Seq), seq(str("NetworkDeliverMessage"), msg))
+			s.monitor.CaptureState(gs, NetworkDeliverMessage, msg)
+
+			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq())
+			gs.actions = Append(gs.actions.(Seq), seq(str("CReceivePrepare"), RefineParty(pid)))
+			gs.tmPrepared = Append(gs.tmPrepared.(Seq), RefineParty(pid))
+			gs.who = str("coordinator")
+			s.monitor.CaptureState(gs, CReceivePrepare, RefineParty(pid))
 		}
 	}
 
@@ -323,36 +385,37 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		return nil, status.Error(codes.Internal, "can't to find msg in the coordinator's cache")
 	}
 	if err = s.DB.Put(key, value); err != nil {
+		// for pid := range s.Followers {
+		// 	g.Aborted[strconv.Itoa(pid)] = true
+		// }
 		for pid := range s.Followers {
-			g.Aborted[strconv.Itoa(pid)] = true
-		}
-		for pid := range s.Followers {
 
-			abortReq := map[string]interface{}{
-				"_type": "send",
-				"_name": "Abort",
-				// "Index": s.Height,
-				"To": pid,
-			}
-			pstatus[strconv.Itoa(pid)] = "aborted"
-			s.serverToJson("CSendAbort13", abortReq, aux)
+			_ = pid
+			// abortReq := map[string]interface{}{
+			// 	"_type": "send",
+			// 	"_name": "Abort",
+			// 	// "Index": s.Height,
+			// 	"To": pid,
+			// }
+			// pstatus[strconv.Itoa(pid)] = "aborted"
+			// s.serverToJson("CSendAbort13", abortReq, aux)
 
-			if err := s.MonitorC.Step(g, rvc.CSendAbort13, strconv.Itoa(pid)); err != nil {
-				log.Printf("%v\n", err)
-			}
+			// if err := s.MonitorC.Step(g, rvc.CSendAbort13, strconv.Itoa(pid)); err != nil {
+			// 	log.Printf("%v\n", err)
+			// }
 
-			abortResp := map[string]interface{}{
-				"_type": "receive",
-				"_name": "Abort",
-				// "Type":  response.Type,
-				// "Index": response.Index,
-				"From": pid,
-			}
-			s.serverToJson("CReceiveAbortAck14", abortResp, aux)
+			// abortResp := map[string]interface{}{
+			// 	"_type": "receive",
+			// 	"_name": "Abort",
+			// 	// "Type":  response.Type,
+			// 	// "Index": response.Index,
+			// 	"From": pid,
+			// }
+			// s.serverToJson("CReceiveAbortAck14", abortResp, aux)
 
-			if err := s.MonitorC.Step(g, rvc.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
-				log.Printf("%v\n", err)
-			}
+			// if err := s.MonitorC.Step(g, rvc.CReceiveAbortAck14, strconv.Itoa(pid)); err != nil {
+			// log.Printf("%v\n", err)
+			// }
 		}
 		return &pb.Response{Type: pb.Type_NACK}, status.Error(codes.Internal, "failed to save msg on coordinator")
 	}
@@ -360,19 +423,35 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 	// commit
 	log.Infof("commit %s", req.Key)
 	for pid, follower := range s.Followers {
+		_ = pid
 		if s.Tracer != nil {
 			span, ctx = s.Tracer.StartSpanFromContext(ctx, "Commit")
 		}
-		commitReq := map[string]interface{}{
-			"_type": "send",
-			"_name": "Commit",
-			// "Index": s.Height,
-			"To": pid,
+		// commitReq := map[string]interface{}{
+		// 	"_type": "send",
+		// 	"_name": "Commit",
+		// 	// "Index": s.Height,
+		// 	"To": pid,
+		// }
+		// s.serverToJson("CSendCommit11", commitReq, aux)
+		// if err := s.MonitorC.Step(g, rvc.CSendCommit11, strconv.Itoa(pid)); err != nil {
+		// log.Printf("%v\n", err)
+		// }
+
+		{
+			msg := RefineCommitMsg(pid)
+			gs.outbox = Except(gs.outbox.(Record), str("coordinator"), seq(msg))
+			gs.tmDecision = str("commit")
+			gs.who = str("coordinator")
+			gs.actions = Append(gs.actions.(Seq), seq(str("CSendCommit"), RefineParty(pid)))
+			s.monitor.CaptureState(gs, CSendCommit, RefineParty(pid))
+
+			gs.outbox = Except(gs.outbox.(Record), str("coordinator"), seq())
+			gs.who = str("Network")
+			gs.actions = Append(gs.actions.(Seq), seq(str("NetworkTakeMessage"), msg))
+			s.monitor.CaptureState(gs, NetworkTakeMessage, msg)
 		}
-		s.serverToJson("CSendCommit11", commitReq, aux)
-		if err := s.MonitorC.Step(g, rvc.CSendCommit11, strconv.Itoa(pid)); err != nil {
-			log.Printf("%v\n", err)
-		}
+
 		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
 		if s.Tracer != nil && span != nil {
 			span.Finish()
@@ -384,25 +463,42 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		if response.Type != pb.Type_ACK {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
-		commitResp := map[string]interface{}{
-			"_type": "receive",
-			"_name": "Commit",
-			// "Type":  response.Type,
-			// "Index": response.Index,
-			"From": pid,
+
+		{
+			msg := RefineCommittedMsg(pid)
+			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
+			gs.who = str("Network")
+			gs.actions = Append(gs.actions.(Seq), seq(str("NetworkDeliverMessage"), msg))
+			s.monitor.CaptureState(gs, NetworkDeliverMessage, msg)
+
+			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq())
+			gs.actions = Append(gs.actions.(Seq), seq(str("CReceiveCommit"), RefineParty(pid)))
+			gs.tmCommitted = Append(gs.tmCommitted.(Seq), RefineParty(pid))
+			gs.who = str("coordinator")
+			s.monitor.CaptureState(gs, CReceiveCommit, RefineParty(pid))
 		}
-		pstatus[strconv.Itoa(pid)] = "committed"
-		s.serverToJson("CReceiveCommitAck12", commitResp, aux)
-		if err := s.MonitorC.Step(g, rvc.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
-			log.Printf("%v\n", err)
-		}
-		g.Committed[strconv.Itoa(pid)] = true
+
+		// commitResp := map[string]interface{}{
+		// 	"_type": "receive",
+		// 	"_name": "Commit",
+		// 	// "Type":  response.Type,
+		// 	// "Index": response.Index,
+		// 	"From": pid,
+		// }
+		// pstatus[strconv.Itoa(pid)] = "committed"
+		// s.serverToJson("CReceiveCommitAck12", commitResp, aux)
+		// if err := s.MonitorC.Step(g, rvc.CReceiveCommitAck12, strconv.Itoa(pid)); err != nil {
+		// 	log.Printf("%v\n", err)
+		// }
+		// g.Committed[strconv.Itoa(pid)] = true
 	}
 	log.Infof("committed key %s", req.Key)
 	// increase height for next round
 	atomic.AddUint64(&s.Height, 1)
 
-	s.MonitorC.Reset()
+	// s.MonitorC.Reset()
+	s.monitor.CheckTrace()
+	fmt.Println("monitor ok!")
 
 	return &pb.Response{Type: pb.Type_ACK}, nil
 }
@@ -457,10 +553,8 @@ func NewCommitServer(conf *config.Config, opts ...Option) (*Server, error) {
 	server.Config = conf
 	if conf.Role == "coordinator" {
 		server.Config.Coordinator = server.Addr
-		server.MonitorC = rvc.NewMonitor(map[string]map[string]bool{"P": mParts})
-	} else {
-		server.MonitorP = rvp.NewMonitor(map[string]map[string]bool{"C": {"c": true}})
 	}
+	server.monitor = NewMonitor()
 
 	server.DB, err = db.New(conf.DBPath)
 	if err != nil {
