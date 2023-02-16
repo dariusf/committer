@@ -6,7 +6,9 @@ set -e
 p1='make run-example-follower1'
 p2='make run-example-follower2'
 c='make run-example-coordinator'
-cl='env REQUESTS=1 make run-example-client'
+# cl='env REQUESTS=1 make run-example-client'
+cl='env REQUESTS=100 make run-example-client'
+# cl='env REQUESTS=1 for i in {1..100}; do make run-example-client; done'
 
 clean() {
   ps aux | grep committer | grep -v grep | awk '{print $2}' | xargs kill
@@ -47,4 +49,5 @@ tmux split-window
 tmux send-keys "$c" ENTER
 tmux split-window
 tmux select-layout tiled
-tmux send-keys "$cl; sleep 1; ./log.sh" #ENTER
+tmux send-keys "$cl" #ENTER
+# tmux send-keys "$cl; sleep 1; ./log.sh" #ENTER

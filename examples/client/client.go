@@ -35,6 +35,8 @@ func main() {
 		if resp.Type != pb.Type_ACK {
 			panic("msg is not acknowledged")
 		}
+		// time.Sleep(500 * time.Millisecond)
+		time.Sleep(2 * time.Second)
 	}
 
 	fmt.Printf("Total time taken: %d\n", time.Since(start).Nanoseconds())

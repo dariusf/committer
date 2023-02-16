@@ -1,18 +1,605 @@
-$ go tool pprof --trim=false profile.prof
-Type: cpu
-Time: Jun 18, 2021 at 3:26pm (+08)
-Duration: 7.77s, Total samples = 712.31ms ( 9.17%)
-Entering interactive mode (type "help" for commands, "o" for options)
-(pprof) show=rv\.
-(pprof) top -cum
-Active filters:
-   show=rv\.
-Showing nodes accounting for 0.34ms, 0.048% of 712.31ms total
-      flat  flat%   sum%        cum   cum%
-    0.20ms 0.028% 0.028%     0.20ms 0.028%  github.com/vadiminshakov/committer/rv.(*Monitor).PrintLog
-    0.03ms 0.0042% 0.032%     0.14ms  0.02%  github.com/vadiminshakov/committer/rv.(*Monitor).Step
-         0     0% 0.032%     0.06ms 0.0084%  github.com/vadiminshakov/committer/rv.(*LTLMonitor1).StepLTL1
-    0.06ms 0.0084% 0.041%     0.06ms 0.0084%  github.com/vadiminshakov/committer/rv.(*LTLMonitor1).t0 (inline)
-    0.03ms 0.0042% 0.045%     0.03ms 0.0042%  github.com/vadiminshakov/committer/rv.(*Monitor).precondition
-    0.02ms 0.0028% 0.048%     0.02ms 0.0028%  github.com/vadiminshakov/committer/rv.(*Monitor).applyPostcondition
-(pprof) q
+$ make run-example-coordinator
+INFO[16 Feb 23 16:23 +08] two-phase-commit mode enabled
+INFO[16 Feb 23 16:23 +08] listening on tcp://localhost:3000
+INFO[16 Feb 23 16:23 +08] propose key key0
+INFO[16 Feb 23 16:23 +08] precommit key key0
+INFO[16 Feb 23 16:23 +08] commit key0
+INFO[16 Feb 23 16:23 +08] committed key key0
+monitor ok!
+677 / 5187 = 0.13
+INFO[16 Feb 23 16:23 +08] propose key key1
+INFO[16 Feb 23 16:23 +08] precommit key key1
+INFO[16 Feb 23 16:23 +08] commit key1
+INFO[16 Feb 23 16:23 +08] committed key key1
+monitor ok!
+1316 / 8841 = 0.15
+INFO[16 Feb 23 16:23 +08] propose key key2
+INFO[16 Feb 23 16:23 +08] precommit key key2
+INFO[16 Feb 23 16:23 +08] commit key2
+INFO[16 Feb 23 16:23 +08] committed key key2
+monitor ok!
+1811 / 11876 = 0.15
+INFO[16 Feb 23 16:23 +08] propose key key3
+INFO[16 Feb 23 16:23 +08] precommit key key3
+INFO[16 Feb 23 16:23 +08] commit key3
+INFO[16 Feb 23 16:23 +08] committed key key3
+monitor ok!
+2473 / 15548 = 0.16
+INFO[16 Feb 23 16:23 +08] propose key key4
+INFO[16 Feb 23 16:23 +08] precommit key key4
+INFO[16 Feb 23 16:23 +08] commit key4
+INFO[16 Feb 23 16:23 +08] committed key key4
+monitor ok!
+3055 / 18778 = 0.16
+INFO[16 Feb 23 16:23 +08] propose key key5
+INFO[16 Feb 23 16:23 +08] precommit key key5
+INFO[16 Feb 23 16:23 +08] commit key5
+INFO[16 Feb 23 16:23 +08] committed key key5
+monitor ok!
+3817 / 22789 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key6
+INFO[16 Feb 23 16:23 +08] precommit key key6
+INFO[16 Feb 23 16:23 +08] commit key6
+INFO[16 Feb 23 16:23 +08] committed key key6
+monitor ok!
+4423 / 26085 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key7
+INFO[16 Feb 23 16:23 +08] precommit key key7
+INFO[16 Feb 23 16:23 +08] commit key7
+INFO[16 Feb 23 16:23 +08] committed key key7
+monitor ok!
+5065 / 29578 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key8
+INFO[16 Feb 23 16:23 +08] precommit key key8
+INFO[16 Feb 23 16:23 +08] commit key8
+INFO[16 Feb 23 16:23 +08] committed key key8
+monitor ok!
+5571 / 32804 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key9
+INFO[16 Feb 23 16:23 +08] precommit key key9
+INFO[16 Feb 23 16:23 +08] commit key9
+INFO[16 Feb 23 16:23 +08] committed key key9
+monitor ok!
+6146 / 36271 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key10
+INFO[16 Feb 23 16:23 +08] precommit key key10
+INFO[16 Feb 23 16:23 +08] commit key10
+INFO[16 Feb 23 16:23 +08] committed key key10
+monitor ok!
+7094 / 43303 = 0.16
+INFO[16 Feb 23 16:23 +08] propose key key11
+INFO[16 Feb 23 16:23 +08] precommit key key11
+INFO[16 Feb 23 16:23 +08] commit key11
+INFO[16 Feb 23 16:23 +08] committed key key11
+monitor ok!
+7834 / 47140 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key12
+INFO[16 Feb 23 16:23 +08] precommit key key12
+INFO[16 Feb 23 16:23 +08] commit key12
+INFO[16 Feb 23 16:23 +08] committed key key12
+monitor ok!
+8833 / 52731 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key13
+INFO[16 Feb 23 16:23 +08] precommit key key13
+INFO[16 Feb 23 16:23 +08] commit key13
+INFO[16 Feb 23 16:23 +08] committed key key13
+monitor ok!
+9505 / 56750 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key14
+INFO[16 Feb 23 16:23 +08] precommit key key14
+INFO[16 Feb 23 16:23 +08] commit key14
+INFO[16 Feb 23 16:23 +08] committed key key14
+monitor ok!
+10079 / 60081 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key15
+INFO[16 Feb 23 16:23 +08] precommit key key15
+INFO[16 Feb 23 16:23 +08] commit key15
+INFO[16 Feb 23 16:23 +08] committed key key15
+monitor ok!
+10531 / 63224 = 0.17
+INFO[16 Feb 23 16:23 +08] propose key key16
+INFO[16 Feb 23 16:23 +08] precommit key key16
+INFO[16 Feb 23 16:23 +08] commit key16
+INFO[16 Feb 23 16:23 +08] committed key key16
+monitor ok!
+11130 / 66342 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key17
+INFO[16 Feb 23 16:24 +08] precommit key key17
+INFO[16 Feb 23 16:24 +08] commit key17
+INFO[16 Feb 23 16:24 +08] committed key key17
+monitor ok!
+11740 / 69579 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key18
+INFO[16 Feb 23 16:24 +08] precommit key key18
+INFO[16 Feb 23 16:24 +08] commit key18
+INFO[16 Feb 23 16:24 +08] committed key key18
+monitor ok!
+12273 / 72942 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key19
+INFO[16 Feb 23 16:24 +08] precommit key key19
+INFO[16 Feb 23 16:24 +08] commit key19
+INFO[16 Feb 23 16:24 +08] committed key key19
+monitor ok!
+12755 / 76054 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key20
+INFO[16 Feb 23 16:24 +08] precommit key key20
+INFO[16 Feb 23 16:24 +08] commit key20
+INFO[16 Feb 23 16:24 +08] committed key key20
+monitor ok!
+13333 / 79280 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key21
+INFO[16 Feb 23 16:24 +08] precommit key key21
+INFO[16 Feb 23 16:24 +08] commit key21
+INFO[16 Feb 23 16:24 +08] committed key key21
+monitor ok!
+13892 / 82745 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key22
+INFO[16 Feb 23 16:24 +08] precommit key key22
+INFO[16 Feb 23 16:24 +08] commit key22
+INFO[16 Feb 23 16:24 +08] committed key key22
+monitor ok!
+14456 / 86337 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key23
+INFO[16 Feb 23 16:24 +08] precommit key key23
+INFO[16 Feb 23 16:24 +08] commit key23
+INFO[16 Feb 23 16:24 +08] committed key key23
+monitor ok!
+15043 / 89565 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key24
+INFO[16 Feb 23 16:24 +08] precommit key key24
+INFO[16 Feb 23 16:24 +08] commit key24
+INFO[16 Feb 23 16:24 +08] committed key key24
+monitor ok!
+15602 / 92851 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key25
+INFO[16 Feb 23 16:24 +08] precommit key key25
+INFO[16 Feb 23 16:24 +08] commit key25
+INFO[16 Feb 23 16:24 +08] committed key key25
+monitor ok!
+16136 / 96025 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key26
+INFO[16 Feb 23 16:24 +08] precommit key key26
+INFO[16 Feb 23 16:24 +08] commit key26
+INFO[16 Feb 23 16:24 +08] committed key key26
+monitor ok!
+16741 / 99476 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key27
+INFO[16 Feb 23 16:24 +08] precommit key key27
+INFO[16 Feb 23 16:24 +08] commit key27
+INFO[16 Feb 23 16:24 +08] committed key key27
+monitor ok!
+17290 / 103130 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key28
+INFO[16 Feb 23 16:24 +08] precommit key key28
+INFO[16 Feb 23 16:24 +08] commit key28
+INFO[16 Feb 23 16:24 +08] committed key key28
+monitor ok!
+17902 / 106413 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key29
+INFO[16 Feb 23 16:24 +08] precommit key key29
+INFO[16 Feb 23 16:24 +08] commit key29
+INFO[16 Feb 23 16:24 +08] committed key key29
+monitor ok!
+18387 / 109671 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key30
+INFO[16 Feb 23 16:24 +08] precommit key key30
+INFO[16 Feb 23 16:24 +08] commit key30
+INFO[16 Feb 23 16:24 +08] committed key key30
+monitor ok!
+18833 / 112619 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key31
+INFO[16 Feb 23 16:24 +08] precommit key key31
+INFO[16 Feb 23 16:24 +08] commit key31
+INFO[16 Feb 23 16:24 +08] committed key key31
+monitor ok!
+19391 / 115838 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key32
+INFO[16 Feb 23 16:24 +08] precommit key key32
+INFO[16 Feb 23 16:24 +08] commit key32
+INFO[16 Feb 23 16:24 +08] committed key key32
+monitor ok!
+19933 / 118959 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key33
+INFO[16 Feb 23 16:24 +08] precommit key key33
+INFO[16 Feb 23 16:24 +08] commit key33
+INFO[16 Feb 23 16:24 +08] committed key key33
+monitor ok!
+20507 / 122124 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key34
+INFO[16 Feb 23 16:24 +08] precommit key key34
+INFO[16 Feb 23 16:24 +08] commit key34
+INFO[16 Feb 23 16:24 +08] committed key key34
+monitor ok!
+21035 / 125413 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key35
+INFO[16 Feb 23 16:24 +08] precommit key key35
+INFO[16 Feb 23 16:24 +08] commit key35
+INFO[16 Feb 23 16:24 +08] committed key key35
+monitor ok!
+21602 / 128640 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key36
+INFO[16 Feb 23 16:24 +08] precommit key key36
+INFO[16 Feb 23 16:24 +08] commit key36
+INFO[16 Feb 23 16:24 +08] committed key key36
+monitor ok!
+22083 / 131748 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key37
+INFO[16 Feb 23 16:24 +08] precommit key key37
+INFO[16 Feb 23 16:24 +08] commit key37
+INFO[16 Feb 23 16:24 +08] committed key key37
+monitor ok!
+22690 / 135232 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key38
+INFO[16 Feb 23 16:24 +08] precommit key key38
+INFO[16 Feb 23 16:24 +08] commit key38
+INFO[16 Feb 23 16:24 +08] committed key key38
+monitor ok!
+23160 / 138177 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key39
+INFO[16 Feb 23 16:24 +08] precommit key key39
+INFO[16 Feb 23 16:24 +08] commit key39
+INFO[16 Feb 23 16:24 +08] committed key key39
+monitor ok!
+23755 / 141452 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key40
+INFO[16 Feb 23 16:24 +08] precommit key key40
+INFO[16 Feb 23 16:24 +08] commit key40
+INFO[16 Feb 23 16:24 +08] committed key key40
+monitor ok!
+24249 / 144297 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key41
+INFO[16 Feb 23 16:24 +08] precommit key key41
+INFO[16 Feb 23 16:24 +08] commit key41
+INFO[16 Feb 23 16:24 +08] committed key key41
+monitor ok!
+24833 / 147564 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key42
+INFO[16 Feb 23 16:24 +08] precommit key key42
+INFO[16 Feb 23 16:24 +08] commit key42
+INFO[16 Feb 23 16:24 +08] committed key key42
+monitor ok!
+25364 / 150715 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key43
+INFO[16 Feb 23 16:24 +08] precommit key key43
+INFO[16 Feb 23 16:24 +08] commit key43
+INFO[16 Feb 23 16:24 +08] committed key key43
+monitor ok!
+25993 / 153976 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key44
+INFO[16 Feb 23 16:24 +08] precommit key key44
+INFO[16 Feb 23 16:24 +08] commit key44
+INFO[16 Feb 23 16:24 +08] committed key key44
+monitor ok!
+26565 / 157236 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key45
+INFO[16 Feb 23 16:24 +08] precommit key key45
+INFO[16 Feb 23 16:24 +08] commit key45
+INFO[16 Feb 23 16:24 +08] committed key key45
+monitor ok!
+27107 / 160532 = 0.17
+INFO[16 Feb 23 16:24 +08] propose key key46
+INFO[16 Feb 23 16:24 +08] precommit key key46
+INFO[16 Feb 23 16:24 +08] commit key46
+INFO[16 Feb 23 16:24 +08] committed key key46
+monitor ok!
+27645 / 163648 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key47
+INFO[16 Feb 23 16:25 +08] precommit key key47
+INFO[16 Feb 23 16:25 +08] commit key47
+INFO[16 Feb 23 16:25 +08] committed key key47
+monitor ok!
+28200 / 166815 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key48
+INFO[16 Feb 23 16:25 +08] precommit key key48
+INFO[16 Feb 23 16:25 +08] commit key48
+INFO[16 Feb 23 16:25 +08] committed key key48
+monitor ok!
+28806 / 170221 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key49
+INFO[16 Feb 23 16:25 +08] precommit key key49
+INFO[16 Feb 23 16:25 +08] commit key49
+INFO[16 Feb 23 16:25 +08] committed key key49
+monitor ok!
+29300 / 173286 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key50
+INFO[16 Feb 23 16:25 +08] precommit key key50
+INFO[16 Feb 23 16:25 +08] commit key50
+INFO[16 Feb 23 16:25 +08] committed key key50
+monitor ok!
+29805 / 176481 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key51
+INFO[16 Feb 23 16:25 +08] precommit key key51
+INFO[16 Feb 23 16:25 +08] commit key51
+INFO[16 Feb 23 16:25 +08] committed key key51
+monitor ok!
+30335 / 179765 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key52
+INFO[16 Feb 23 16:25 +08] precommit key key52
+INFO[16 Feb 23 16:25 +08] commit key52
+INFO[16 Feb 23 16:25 +08] committed key key52
+monitor ok!
+30929 / 183887 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key53
+INFO[16 Feb 23 16:25 +08] precommit key key53
+INFO[16 Feb 23 16:25 +08] commit key53
+INFO[16 Feb 23 16:25 +08] committed key key53
+monitor ok!
+31601 / 187229 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key54
+INFO[16 Feb 23 16:25 +08] precommit key key54
+INFO[16 Feb 23 16:25 +08] commit key54
+INFO[16 Feb 23 16:25 +08] committed key key54
+monitor ok!
+32098 / 190280 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key55
+INFO[16 Feb 23 16:25 +08] precommit key key55
+INFO[16 Feb 23 16:25 +08] commit key55
+INFO[16 Feb 23 16:25 +08] committed key key55
+monitor ok!
+32668 / 193645 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key56
+INFO[16 Feb 23 16:25 +08] precommit key key56
+INFO[16 Feb 23 16:25 +08] commit key56
+INFO[16 Feb 23 16:25 +08] committed key key56
+monitor ok!
+33205 / 196897 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key57
+INFO[16 Feb 23 16:25 +08] precommit key key57
+INFO[16 Feb 23 16:25 +08] commit key57
+INFO[16 Feb 23 16:25 +08] committed key key57
+monitor ok!
+33747 / 200219 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key58
+INFO[16 Feb 23 16:25 +08] precommit key key58
+INFO[16 Feb 23 16:25 +08] commit key58
+INFO[16 Feb 23 16:25 +08] committed key key58
+monitor ok!
+34364 / 203506 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key59
+INFO[16 Feb 23 16:25 +08] precommit key key59
+INFO[16 Feb 23 16:25 +08] commit key59
+INFO[16 Feb 23 16:25 +08] committed key key59
+monitor ok!
+34905 / 206586 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key60
+INFO[16 Feb 23 16:25 +08] precommit key key60
+INFO[16 Feb 23 16:25 +08] commit key60
+INFO[16 Feb 23 16:25 +08] committed key key60
+monitor ok!
+35510 / 209996 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key61
+INFO[16 Feb 23 16:25 +08] precommit key key61
+INFO[16 Feb 23 16:25 +08] commit key61
+INFO[16 Feb 23 16:25 +08] committed key key61
+monitor ok!
+36101 / 213431 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key62
+INFO[16 Feb 23 16:25 +08] precommit key key62
+INFO[16 Feb 23 16:25 +08] commit key62
+INFO[16 Feb 23 16:25 +08] committed key key62
+monitor ok!
+36598 / 216555 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key63
+INFO[16 Feb 23 16:25 +08] precommit key key63
+INFO[16 Feb 23 16:25 +08] commit key63
+INFO[16 Feb 23 16:25 +08] committed key key63
+monitor ok!
+37095 / 219599 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key64
+INFO[16 Feb 23 16:25 +08] precommit key key64
+INFO[16 Feb 23 16:25 +08] commit key64
+INFO[16 Feb 23 16:25 +08] committed key key64
+monitor ok!
+37651 / 222880 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key65
+INFO[16 Feb 23 16:25 +08] precommit key key65
+INFO[16 Feb 23 16:25 +08] commit key65
+INFO[16 Feb 23 16:25 +08] committed key key65
+monitor ok!
+38196 / 225819 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key66
+INFO[16 Feb 23 16:25 +08] precommit key key66
+INFO[16 Feb 23 16:25 +08] commit key66
+INFO[16 Feb 23 16:25 +08] committed key key66
+monitor ok!
+38639 / 228773 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key67
+INFO[16 Feb 23 16:25 +08] precommit key key67
+INFO[16 Feb 23 16:25 +08] commit key67
+INFO[16 Feb 23 16:25 +08] committed key key67
+monitor ok!
+39128 / 231890 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key68
+INFO[16 Feb 23 16:25 +08] precommit key key68
+INFO[16 Feb 23 16:25 +08] commit key68
+INFO[16 Feb 23 16:25 +08] committed key key68
+monitor ok!
+39631 / 234857 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key69
+INFO[16 Feb 23 16:25 +08] precommit key key69
+INFO[16 Feb 23 16:25 +08] commit key69
+INFO[16 Feb 23 16:25 +08] committed key key69
+monitor ok!
+40118 / 238075 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key70
+INFO[16 Feb 23 16:25 +08] precommit key key70
+INFO[16 Feb 23 16:25 +08] commit key70
+INFO[16 Feb 23 16:25 +08] committed key key70
+monitor ok!
+40495 / 241053 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key71
+INFO[16 Feb 23 16:25 +08] precommit key key71
+INFO[16 Feb 23 16:25 +08] commit key71
+INFO[16 Feb 23 16:25 +08] committed key key71
+monitor ok!
+40951 / 244126 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key72
+INFO[16 Feb 23 16:25 +08] precommit key key72
+INFO[16 Feb 23 16:25 +08] commit key72
+INFO[16 Feb 23 16:25 +08] committed key key72
+monitor ok!
+41403 / 247335 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key73
+INFO[16 Feb 23 16:25 +08] precommit key key73
+INFO[16 Feb 23 16:25 +08] commit key73
+INFO[16 Feb 23 16:25 +08] committed key key73
+monitor ok!
+41929 / 250778 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key74
+INFO[16 Feb 23 16:25 +08] precommit key key74
+INFO[16 Feb 23 16:25 +08] commit key74
+INFO[16 Feb 23 16:25 +08] committed key key74
+monitor ok!
+42411 / 253903 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key75
+INFO[16 Feb 23 16:25 +08] precommit key key75
+INFO[16 Feb 23 16:25 +08] commit key75
+INFO[16 Feb 23 16:25 +08] committed key key75
+monitor ok!
+42934 / 257196 = 0.17
+INFO[16 Feb 23 16:25 +08] propose key key76
+INFO[16 Feb 23 16:25 +08] precommit key key76
+INFO[16 Feb 23 16:25 +08] commit key76
+INFO[16 Feb 23 16:25 +08] committed key key76
+monitor ok!
+43330 / 260201 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key77
+INFO[16 Feb 23 16:26 +08] precommit key key77
+INFO[16 Feb 23 16:26 +08] commit key77
+INFO[16 Feb 23 16:26 +08] committed key key77
+monitor ok!
+43825 / 263358 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key78
+INFO[16 Feb 23 16:26 +08] precommit key key78
+INFO[16 Feb 23 16:26 +08] commit key78
+INFO[16 Feb 23 16:26 +08] committed key key78
+monitor ok!
+44225 / 266408 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key79
+INFO[16 Feb 23 16:26 +08] precommit key key79
+INFO[16 Feb 23 16:26 +08] commit key79
+INFO[16 Feb 23 16:26 +08] committed key key79
+monitor ok!
+44649 / 269508 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key80
+INFO[16 Feb 23 16:26 +08] precommit key key80
+INFO[16 Feb 23 16:26 +08] commit key80
+INFO[16 Feb 23 16:26 +08] committed key key80
+monitor ok!
+45162 / 272664 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key81
+INFO[16 Feb 23 16:26 +08] precommit key key81
+INFO[16 Feb 23 16:26 +08] commit key81
+INFO[16 Feb 23 16:26 +08] committed key key81
+monitor ok!
+45682 / 275872 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key82
+INFO[16 Feb 23 16:26 +08] precommit key key82
+INFO[16 Feb 23 16:26 +08] commit key82
+INFO[16 Feb 23 16:26 +08] committed key key82
+monitor ok!
+46078 / 278788 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key83
+INFO[16 Feb 23 16:26 +08] precommit key key83
+INFO[16 Feb 23 16:26 +08] commit key83
+INFO[16 Feb 23 16:26 +08] committed key key83
+monitor ok!
+46556 / 281805 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key84
+INFO[16 Feb 23 16:26 +08] precommit key key84
+INFO[16 Feb 23 16:26 +08] commit key84
+INFO[16 Feb 23 16:26 +08] committed key key84
+monitor ok!
+47067 / 285040 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key85
+INFO[16 Feb 23 16:26 +08] precommit key key85
+INFO[16 Feb 23 16:26 +08] commit key85
+INFO[16 Feb 23 16:26 +08] committed key key85
+monitor ok!
+47601 / 288142 = 0.17
+INFO[16 Feb 23 16:26 +08] propose key key86
+INFO[16 Feb 23 16:26 +08] precommit key key86
+INFO[16 Feb 23 16:26 +08] commit key86
+INFO[16 Feb 23 16:26 +08] committed key key86
+monitor ok!
+47986 / 291095 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key87
+INFO[16 Feb 23 16:26 +08] precommit key key87
+INFO[16 Feb 23 16:26 +08] commit key87
+INFO[16 Feb 23 16:26 +08] committed key key87
+monitor ok!
+48461 / 294276 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key88
+INFO[16 Feb 23 16:26 +08] precommit key key88
+INFO[16 Feb 23 16:26 +08] commit key88
+INFO[16 Feb 23 16:26 +08] committed key key88
+monitor ok!
+48935 / 297315 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key89
+INFO[16 Feb 23 16:26 +08] precommit key key89
+INFO[16 Feb 23 16:26 +08] commit key89
+INFO[16 Feb 23 16:26 +08] committed key key89
+monitor ok!
+49444 / 300379 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key90
+INFO[16 Feb 23 16:26 +08] precommit key key90
+INFO[16 Feb 23 16:26 +08] commit key90
+INFO[16 Feb 23 16:26 +08] committed key key90
+monitor ok!
+49833 / 303418 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key91
+INFO[16 Feb 23 16:26 +08] precommit key key91
+INFO[16 Feb 23 16:26 +08] commit key91
+INFO[16 Feb 23 16:26 +08] committed key key91
+monitor ok!
+50368 / 306615 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key92
+INFO[16 Feb 23 16:26 +08] precommit key key92
+INFO[16 Feb 23 16:26 +08] commit key92
+INFO[16 Feb 23 16:26 +08] committed key key92
+monitor ok!
+50799 / 309748 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key93
+INFO[16 Feb 23 16:26 +08] precommit key key93
+INFO[16 Feb 23 16:26 +08] commit key93
+INFO[16 Feb 23 16:26 +08] committed key key93
+monitor ok!
+51250 / 312854 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key94
+INFO[16 Feb 23 16:26 +08] precommit key key94
+INFO[16 Feb 23 16:26 +08] commit key94
+INFO[16 Feb 23 16:26 +08] committed key key94
+monitor ok!
+51691 / 315899 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key95
+INFO[16 Feb 23 16:26 +08] precommit key key95
+INFO[16 Feb 23 16:26 +08] commit key95
+INFO[16 Feb 23 16:26 +08] committed key key95
+monitor ok!
+52231 / 319201 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key96
+INFO[16 Feb 23 16:26 +08] precommit key key96
+INFO[16 Feb 23 16:26 +08] commit key96
+INFO[16 Feb 23 16:26 +08] committed key key96
+monitor ok!
+52673 / 322303 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key97
+INFO[16 Feb 23 16:26 +08] precommit key key97
+INFO[16 Feb 23 16:26 +08] commit key97
+INFO[16 Feb 23 16:26 +08] committed key key97
+monitor ok!
+53296 / 325662 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key98
+INFO[16 Feb 23 16:26 +08] precommit key key98
+INFO[16 Feb 23 16:26 +08] commit key98
+INFO[16 Feb 23 16:26 +08] committed key key98
+monitor ok!
+53808 / 328773 = 0.16
+INFO[16 Feb 23 16:26 +08] propose key key99
+INFO[16 Feb 23 16:26 +08] precommit key key99
+INFO[16 Feb 23 16:26 +08] commit key99
+INFO[16 Feb 23 16:26 +08] committed key key99
+monitor ok!
+54239 / 331891 = 0.16
+
+~/refi/projects/committer master ↑11 +3 3m 21s

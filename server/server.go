@@ -224,9 +224,13 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 	// 	Aborted: map[string]bool{},
 	// }
 
+	NormalStart()
+
+	MonitorStart()
 	gs := s.Starting()
 	s.monitor.CaptureState(gs, Initial)
 	gs.who = str("coordinator")
+	MonitorEnd()
 
 	// aux := map[string]interface{}{}
 	// pstatus := map[string]interface{}{}
@@ -275,6 +279,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			// gs.outbox = Except(gs.outbox.(Record),
 			// 	str("coordinator"), Append(RecordIndex(gs.outbox.(Record), str("coordinator")).(Seq), RefineProposeMsg(pid, &proposeReq)))
 
+			MonitorStart()
 			{
 				msg := RefineProposeMsg(pid, &proposeReq)
 				gs.outbox = Except(gs.outbox.(Record),
@@ -291,6 +296,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 				gs.who = str("Network")
 				s.monitor.CaptureState(gs, NetworkTakeMessage, msg)
 			}
+			MonitorEnd()
 
 			response, err = follower.Propose(ctx, &proposeReq)
 
@@ -318,6 +324,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			// 	log.Printf("%v\n", err)
 			// }
 			// g.HasAborted = true
+			MonitorStart()
 			{
 				msg := RefineAbortedMsg(pid)
 				gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
@@ -331,6 +338,8 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 				gs.who = str("coordinator")
 				s.monitor.CaptureState(gs, CReceiveAbort, RefineParty(pid))
 			}
+			MonitorEnd()
+
 			return &pb.Response{Type: pb.Type_NACK}, nil
 		}
 		s.NodeCache.Set(s.Height, req.Key, req.Value)
@@ -342,6 +351,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		// 	log.Printf("%v\n", err)
 		// }
 
+		MonitorStart()
 		{
 			msg := RefineProposeReply(pid)
 			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
@@ -355,6 +365,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			gs.who = str("coordinator")
 			s.monitor.CaptureState(gs, CReceivePrepare, RefineParty(pid))
 		}
+		MonitorEnd()
 	}
 
 	// precommit phase only for three-phase mode
@@ -438,6 +449,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 		// log.Printf("%v\n", err)
 		// }
 
+		MonitorStart()
 		{
 			msg := RefineCommitMsg(pid)
 			gs.outbox = Except(gs.outbox.(Record), str("coordinator"), seq(msg))
@@ -451,6 +463,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			gs.actions = Append(gs.actions.(Seq), seq(str("NetworkTakeMessage"), msg))
 			s.monitor.CaptureState(gs, NetworkTakeMessage, msg)
 		}
+		MonitorEnd()
 
 		response, err = follower.Commit(ctx, &pb.CommitRequest{Index: s.Height})
 		if s.Tracer != nil && span != nil {
@@ -464,6 +477,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			return nil, status.Error(codes.Internal, "follower not acknowledged msg")
 		}
 
+		MonitorStart()
 		{
 			msg := RefineCommittedMsg(pid)
 			gs.inbox = Except(gs.inbox.(Record), str("coordinator"), seq(msg))
@@ -477,6 +491,7 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 			gs.who = str("coordinator")
 			s.monitor.CaptureState(gs, CReceiveCommit, RefineParty(pid))
 		}
+		MonitorEnd()
 
 		// commitResp := map[string]interface{}{
 		// 	"_type": "receive",
@@ -496,9 +511,15 @@ func (s *Server) Put(ctx context.Context, req *pb.Entry) (*pb.Response, error) {
 	// increase height for next round
 	atomic.AddUint64(&s.Height, 1)
 
+	MonitorStart()
 	// s.MonitorC.Reset()
 	s.monitor.CheckTrace()
+	s.monitor.Reset()
 	fmt.Println("monitor ok!")
+	MonitorEnd()
+
+	NormalEnd()
+	PrintOverhead()
 
 	return &pb.Response{Type: pb.Type_ACK}, nil
 }

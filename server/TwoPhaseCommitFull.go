@@ -539,7 +539,9 @@ func NewMonitor( /* constants Constants */ ) *Monitor {
 	}
 }
 
-// TODO check initial
+func (m *Monitor) Reset() {
+	m.events = []Event{}
+}
 
 func (m *Monitor) CheckTrace() error {
 	var prev Event
