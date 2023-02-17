@@ -36,10 +36,10 @@ func main() {
 			panic("msg is not acknowledged")
 		}
 		// time.Sleep(500 * time.Millisecond)
-		time.Sleep(2 * time.Second)
+		// time.Sleep(2 * time.Second)
 	}
 
-	fmt.Printf("Total time taken: %d\n", time.Since(start).Nanoseconds())
+	fmt.Printf("Total time taken: %d\n", time.Since(start).Microseconds())
 
 	// read committed keys
 	//key, err := cli.Get(context.Background(), "key3")
